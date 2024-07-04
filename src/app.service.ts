@@ -2,13 +2,14 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { AxiosResponse } from 'axios';
-import { Observable, from } from 'rxjs';
+import { Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import * as os from 'os';
 
 @Injectable()
 export class AppService {
   private readonly apiKey: string;
+  private readonly ipInfoToken: string = 'dcf60749553d8d'; // Your ipinfo.io access token
 
   constructor(
     private readonly httpService: HttpService,
@@ -31,7 +32,7 @@ export class AppService {
 
   async getDefaultLocation(): Promise<{ city: string }> {
     try {
-      const response = await this.httpService.get('https://ipinfo.io/json').toPromise();
+      const response = await this.httpService.get(`https://ipinfo.io/json?token=${this.ipInfoToken}`).toPromise();
       const city = response.data.city;
       if (!city) {
         throw new Error('City not found');
@@ -51,7 +52,8 @@ export class AppService {
     }
 
     try {
-      const response = await this.httpService.get(`https://ipinfo.io/${ip}/json`).toPromise();
+      console.log(`Fetching location for IP: ${ip}`);
+      const response = await this.httpService.get(`https://ipinfo.io/${ip}/json?token=${this.ipInfoToken}`).toPromise();
       const city = response.data.city;
       if (!city) {
         throw new Error('City not found');
@@ -59,7 +61,7 @@ export class AppService {
       console.log(`Location fetched for IP ${ip}: ${city}`);
       return { city };
     } catch (error) {
-      console.error(`Error fetching location or city not found: ${error.message}`);
+      console.error(`Error fetching location for IP ${ip}: ${error.message}`);
       throw new HttpException('Could not determine location', 400);
     }
   }
@@ -73,7 +75,7 @@ export class AppService {
     return this.httpService.get(url).pipe(
       map((response: AxiosResponse) => response.data),
       catchError(error => {
-        console.error(`Error fetching weather data: ${error.message}`);
+        console.error(`Error fetching weather data for city ${city}: ${error.message}`);
         throw new HttpException('Error fetching weather data', 400);
       })
     );

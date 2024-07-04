@@ -1,20 +1,34 @@
-import { Controller, Get, HttpException, Ip, Query } from '@nestjs/common';
+import { Controller, Get, Query, Req, HttpException } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Request } from 'express';
 
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get('api/hello')
-  async greet(@Ip() clientIp: string, @Query('visitor_name') visitor_name: string) {
+  @Get('hello')
+  async greet(@Req() request: Request, @Query('visitor_name') visitor_name: string) {
     if (!visitor_name) {
-      throw new HttpException('Name parameter is missing', 400);
+      throw new HttpException('Visitor name parameter is missing', 400);
     }
 
-    const ip = clientIp || this.appService.getLocalIpAddress();
-    const location = await this.appService.getLocation(ip);
+    let clientIp = request.ip;
+    if (clientIp === '::1') {
+      clientIp = '127.0.0.1';
+    }
+
+    console.log(`Client IP: ${clientIp}`);
+    const location = await this.appService.getLocation(clientIp);
     const weatherData = await this.appService.getWeather(location.city).toPromise();
 
-    return this.appService.createGreeting(ip, location.city, weatherData.main.temp, visitor_name);
+    return this.appService.createGreeting(clientIp, location.city, weatherData.main.temp, visitor_name);
+  }
+
+  @Get('health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      message: 'Service is running',
+    };
   }
 }
