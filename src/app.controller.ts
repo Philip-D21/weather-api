@@ -6,8 +6,8 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('api/hello')
-  async greet(@Ip() clientIp: string, @Query('name') name: string) {
-    if (!name) {
+  async greet(@Ip() clientIp: string, @Query('visitor_name') visitor_name: string) {
+    if (!visitor_name) {
       throw new HttpException('Name parameter is missing', 400);
     }
 
@@ -15,6 +15,6 @@ export class AppController {
     const location = await this.appService.getLocation(ip);
     const weatherData = await this.appService.getWeather(location.city).toPromise();
 
-    return this.appService.createGreeting(ip, location.city, weatherData.main.temp, name);
+    return this.appService.createGreeting(ip, location.city, weatherData.main.temp, visitor_name);
   }
 }
