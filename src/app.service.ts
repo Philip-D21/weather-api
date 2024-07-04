@@ -2,7 +2,7 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { AxiosResponse } from 'axios';
-import { Observable } from 'rxjs';
+import { Observable, from } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import * as os from 'os';
 
@@ -29,10 +29,25 @@ export class AppService {
     return '127.0.0.1';
   }
 
+  async getDefaultLocation(): Promise<{ city: string }> {
+    try {
+      const response = await this.httpService.get('https://ipinfo.io/json').toPromise();
+      const city = response.data.city;
+      if (!city) {
+        throw new Error('City not found');
+      }
+      console.log(`Default location fetched: ${city}`);
+      return { city };
+    } catch (error) {
+      console.error(`Error fetching default location: ${error.message}`);
+      throw new HttpException('Could not determine default location', 400);
+    }
+  }
+
   async getLocation(ip: string): Promise<{ city: string }> {
     if (ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
-      console.log('Local or private IP detected, defaulting to Lagos');
-      return { city: 'Lagos' };
+      console.log('Local or private IP detected, fetching default location');
+      return this.getDefaultLocation();
     }
 
     try {
@@ -68,7 +83,7 @@ export class AppService {
     return {
       client_ip: clientIp,
       location: city,
-      greeting: `Hello, ${visitorName}!, the temperature is ${temperature} degrees Celsius in ${city}`
+      greeting: `Hello, ${visitorName}! The temperature is ${temperature} degrees Celsius in ${city}`
     };
   }
 }
