@@ -31,8 +31,8 @@ export class AppService {
 
   async getLocation(ip: string): Promise<{ city: string }> {
     if (ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
-      console.log('Local or private IP detected, defaulting to New York');
-      return { city: 'New York' };
+      console.log('Local or private IP detected, defaulting to Lagos');
+      return { city: 'Lagos' };
     }
 
     try {
